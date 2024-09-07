@@ -1,0 +1,53 @@
+#!/bin/bash
+
+##Nanopore to final single fasta
+##Amr Galal 2024 amrgalalibrahim@gmail.com
+##Supervisor Prof. Edson Adriano; adriano@unifesp.br
+
+#Install NanoFilt ==> sudo apt install nanofilt
+#Install porechop ==> sudo apt install porechop
+
+#Install Flye ==> conda install bioconda::flye   or   conda install bioconda/label/cf201901::flye
+#Another-Option #Download from github and use direct from python
+#git clone https://github.com/fenderglass/Flye
+#cd Flye
+#make
+#python bin/flye
+##https://github.com/mikolmogorov/Flye
+
+##Install seqret ==> sudo apt install emboss
+##From trimmed.fastq ==>> #seqret -sequence trimmed.fastq -outseq FILE_NAME_final.fasta
+
+# Set input and output directories
+input_dir="your_input_directory"   # Replace with your actual directory
+output_dir="your_output_directory"  # Replace with the desired output directory
+mkdir -p $output_dir
+
+# Loop through each barcode directory
+for barcode_dir in $input_dir/*; do
+  # Check if it's a directory
+  if [[ -d "$barcode_dir" ]]; then
+
+    # Create output directory for this barcode
+    barcode_name=$(basename "$barcode_dir")
+    barcode_output_dir="$output_dir/$barcode_name"
+    mkdir -p "$barcode_output_dir"
+
+    # Concatenate all fastq.gz files in this directory
+    cat "$barcode_dir"/*.fastq.gz > "$barcode_output_dir/all_reads.fastq.gz"
+    gunzip "$barcode_output_dir/all_reads.fastq.gz"
+
+    # Filter and trim reads (NanoFilt and Porechop)
+    NanoFilt -q 7 -l 1000 "$barcode_output_dir/all_reads.fastq" > "$barcode_output_dir/filtered.fastq"
+    porechop -i "$barcode_output_dir/filtered.fastq" -o "$barcode_output_dir/trimmed.fastq"
+
+    # Error correction (optional, use if needed)
+    # canu -p <assembly_prefix> -d <output_directory> genomeSize=<estimated_genome_size> useGrid=false -nanopore-raw <trimmed.fastq> 
+
+    # Assembly (Flye)
+    flye --nano-raw "$barcode_output_dir/trimmed.fastq" --out-dir "$barcode_output_dir/assembly" --genome-size <estimated_genome_size>
+##python DIRECTORY_OF_FLYE/bin/flye --nano-raw "$barcode_output_dir/trimmed.fastq" --out-dir "$barcode_output_dir/assembly" --genome-size <estimated_genome_size>
+    # Extract the final consensus sequence
+    cat "$barcode_output_dir/assembly/assembly.fasta" | grep -v '^>' > "$barcode_output_dir/${barcode_name}_final.fasta"
+  fi
+done

@@ -3,8 +3,10 @@ Nanopore barcode sequencing to final single fasta
 
 This script automates the processing of Nanopore sequencing data, from raw fastq.gz files to a final assembled FASTA sequence for each barcode/sample.
 
-Author: Amr Galal (amrgalalibrahim@gmail.com)
+Authors: 
 Supervisor: Prof. Edson Adriano (adriano@unifesp.br)
+Amr Galal (amrgalalibrahim@gmail.com)
+
 
 Requirements:
 
